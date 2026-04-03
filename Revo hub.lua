@@ -2,7 +2,7 @@ local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlred
 
 local Window = redzlib:MakeWindow({
     Title = "Revo Hub",
-    SubTitle = "by Revo",
+    SubTitle = "by you",
     SaveFolder = "RevoHub"
 })
 
@@ -47,7 +47,6 @@ end)
 local instantInteract = false
 local usedPrompts = {}
 local allPrompts = {}
-local MAX_DISTANCE = 30
 
 local function addPrompt(p)
     if not p:IsA("ProximityPrompt") then return end
@@ -66,27 +65,14 @@ game.DescendantAdded:Connect(addPrompt)
 game:GetService("RunService").Heartbeat:Connect(function()
     if not instantInteract then return end
 
-    local plr = game.Players.LocalPlayer
-    local char = plr.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
     for _, p in pairs(allPrompts) do
         if p and p.Enabled and not usedPrompts[p] then
-            local part = p.Parent
-            if part and part:IsA("BasePart") then
-                local dist = (hrp.Position - part.Position).Magnitude
-                if dist <= MAX_DISTANCE then
-                    usedPrompts[p] = true
-                    p.HoldDuration = 0
-                    p.RequiresLineOfSight = false
-                    p.MaxActivationDistance = MAX_DISTANCE
-                    p:InputHoldBegin()
-                    task.wait()
-                    p:InputHoldEnd()
-                end
-            end
+            usedPrompts[p] = true
+            p.HoldDuration = 0
+            p.RequiresLineOfSight = false
+            p:InputHoldBegin()
+            task.wait()
+            p:InputHoldEnd()
         end
     end
 end)
@@ -96,17 +82,6 @@ Tab:AddToggle({
     Default = false,
     Callback = function(v)
         instantInteract = v
-    end
-})
-
-Tab:AddSlider({
-    Name = "Interaction Distance",
-    Min = 5,
-    Max = 50,
-    Increase = 1,
-    Default = MAX_DISTANCE,
-    Callback = function(value)
-        MAX_DISTANCE = value
     end
 })
 
