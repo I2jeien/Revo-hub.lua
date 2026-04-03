@@ -20,8 +20,7 @@ Window:SelectTab(Tab)
 Tab:AddSection({"Player"})
 
 local anchorToggle = Tab:AddToggle({
-    Name = "Anchor Player",
-    Description = "Trava + remove animação",
+    Name = "Anchor",
     Default = false
 })
 
@@ -46,53 +45,64 @@ anchorToggle:Callback(function(v)
     end
 end)
 
-local instant = false
+local buyBrainrot = false
 local MAX_DISTANCE = 25
-local prompts = {}
+local usedPrompts = {}
 
-local function addPrompt(p)
-    if not p:IsA("ProximityPrompt") then return end
-    p.HoldDuration = 0
-    p.RequiresLineOfSight = false
+local function interactPrompt(p)
+    if not p or not p:IsA("ProximityPrompt") then return end
+    if not p.Enabled or usedPrompts[p] then return end
 
-    local used = false
+    local plr = game.Players.LocalPlayer
+    local char = plr.Character
+    if not char then return end
 
-    p.PromptShown:Connect(function()
-        used = false
-    end)
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if instant and not used and p.Enabled then
-            local plr = game.Players.LocalPlayer
-            local char = plr.Character
-            if not char then return end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            local part = p.Parent
-            if part and part:IsA("BasePart") then
-                local dist = (hrp.Position - part.Position).Magnitude
-                if dist <= MAX_DISTANCE then
-                    used = true
-                    p:InputHoldBegin()
-                    p:InputHoldEnd()
-                end
-            end
+    local part = p.Parent
+    if part and part:IsA("BasePart") then
+        local dist = (hrp.Position - part.Position).Magnitude
+        if dist <= MAX_DISTANCE then
+            usedPrompts[p] = true
+            p.HoldDuration = 0
+            p.RequiresLineOfSight = false
+            p:InputHoldBegin()
+            p:InputHoldEnd()
         end
-    end)
+    end
 end
 
-for _,v in pairs(game:GetDescendants()) do
-    addPrompt(v)
+for _,p in pairs(game:GetDescendants()) do
+    if p:IsA("ProximityPrompt") then
+        p.PromptShown:Connect(function()
+            usedPrompts[p] = false
+        end)
+    end
 end
 
-game.DescendantAdded:Connect(addPrompt)
+game.DescendantAdded:Connect(function(p)
+    if p:IsA("ProximityPrompt") then
+        p.PromptShown:Connect(function()
+            usedPrompts[p] = false
+        end)
+    end
+end)
+
+game:GetService("RunService").Heartbeat:Connect(function()
+    if not buyBrainrot then return end
+    for _,p in pairs(game:GetDescendants()) do
+        if p:IsA("ProximityPrompt") then
+            interactPrompt(p)
+        end
+    end
+end)
 
 Tab:AddToggle({
-    Name = "Instant Interaction",
-    Description = "Alcance aumentado + 1x por vez",
+    Name = "Buy Brainrot",
     Default = false,
     Callback = function(v)
-        instant = v
+        buyBrainrot = v
     end
 })
 
@@ -100,7 +110,6 @@ local antiAFKConnection
 
 Tab:AddToggle({
     Name = "Anti AFK",
-    Description = "Evita kick por inatividade",
     Default = false,
     Callback = function(v)
         if v then
