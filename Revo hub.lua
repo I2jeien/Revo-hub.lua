@@ -19,7 +19,6 @@ Window:SelectTab(Tab)
 
 Tab:AddSection({"Player"})
 
--- Anchor
 local anchorToggle = Tab:AddToggle({Name = "Anchor", Default = false})
 anchorToggle:Callback(function(v)
     local plr = game.Players.LocalPlayer
@@ -45,31 +44,25 @@ anchorToggle:Callback(function(v)
     end
 end)
 
--- Buy Brainrot otimizado
 local buyBrainrot = false
 local MAX_DISTANCE = 25
 local usedPrompts = {}
-local brainrotPrompts = {}
+local allPrompts = {}
 
 local function addPrompt(p)
     if not p:IsA("ProximityPrompt") then return end
-    if p.Parent.Name:lower():find("brainrot") then
-        table.insert(brainrotPrompts, p)
-    end
+    table.insert(allPrompts, p)
     p.PromptShown:Connect(function()
         usedPrompts[p] = false
     end)
 end
 
--- Adiciona prompts existentes
 for _, p in pairs(game:GetDescendants()) do
     addPrompt(p)
 end
 
--- Adiciona prompts que surgirem
 game.DescendantAdded:Connect(addPrompt)
 
--- Loop otimizado
 game:GetService("RunService").Heartbeat:Connect(function()
     if not buyBrainrot then return end
     local plr = game.Players.LocalPlayer
@@ -78,7 +71,7 @@ game:GetService("RunService").Heartbeat:Connect(function()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    for _, p in pairs(brainrotPrompts) do
+    for _, p in pairs(allPrompts) do
         if p and p.Parent and p.Enabled and not usedPrompts[p] then
             local dist = (hrp.Position - p.Parent.Position).Magnitude
             if dist <= MAX_DISTANCE then
@@ -94,7 +87,6 @@ end)
 
 Tab:AddToggle({Name = "Buy Brainrot", Default = false, Callback = function(v) buyBrainrot = v end})
 
--- Anti AFK
 local antiAFKConnection
 Tab:AddToggle({Name = "Anti AFK", Default = false, Callback = function(v)
     if v then
