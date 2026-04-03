@@ -2,7 +2,7 @@ local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlred
 
 local Window = redzlib:MakeWindow({
     Title = "Revo Hub",
-    SubTitle = "by Revo",
+    SubTitle = "by you",
     SaveFolder = "RevoHub"
 })
 
@@ -29,6 +29,7 @@ anchorToggle:Callback(function(v)
     local char = plr.Character or plr.CharacterAdded:Wait()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     local hum = char:FindFirstChildOfClass("Humanoid")
+    local animator = hum and hum:FindFirstChildWhichIsA("Animator")
 
     if hrp then
         hrp.Anchored = v
@@ -38,6 +39,11 @@ anchorToggle:Callback(function(v)
         if v then
             hum:ChangeState(Enum.HumanoidStateType.Physics)
             hum.AutoRotate = false
+            if animator then
+                for _, track in pairs(animator:GetPlayingAnimationTracks()) do
+                    track:Stop()
+                end
+            end
         else
             hum:ChangeState(Enum.HumanoidStateType.GettingUp)
             hum.AutoRotate = true
