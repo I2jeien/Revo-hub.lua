@@ -44,10 +44,10 @@ anchorToggle:Callback(function(v)
     end
 end)
 
-local buyBrainrot = false
-local MAX_DISTANCE = 25
+local instantInteract = false
 local usedPrompts = {}
 local allPrompts = {}
+local MAX_DISTANCE = 30
 
 local function addPrompt(p)
     if not p:IsA("ProximityPrompt") then return end
@@ -64,7 +64,8 @@ end
 game.DescendantAdded:Connect(addPrompt)
 
 game:GetService("RunService").Heartbeat:Connect(function()
-    if not buyBrainrot then return end
+    if not instantInteract then return end
+
     local plr = game.Players.LocalPlayer
     local char = plr.Character
     if not char then return end
@@ -72,33 +73,59 @@ game:GetService("RunService").Heartbeat:Connect(function()
     if not hrp then return end
 
     for _, p in pairs(allPrompts) do
-        if p and p.Parent and p.Enabled and not usedPrompts[p] then
-            local dist = (hrp.Position - p.Parent.Position).Magnitude
-            if dist <= MAX_DISTANCE then
-                usedPrompts[p] = true
-                p.HoldDuration = 0
-                p.RequiresLineOfSight = false
-                p:InputHoldBegin()
-                p:InputHoldEnd()
+        if p and p.Enabled and not usedPrompts[p] then
+            local part = p.Parent
+            if part and part:IsA("BasePart") then
+                local dist = (hrp.Position - part.Position).Magnitude
+                if dist <= MAX_DISTANCE then
+                    usedPrompts[p] = true
+                    p.HoldDuration = 0
+                    p.RequiresLineOfSight = false
+                    p.MaxActivationDistance = MAX_DISTANCE
+                    p:InputHoldBegin()
+                    task.wait()
+                    p:InputHoldEnd()
+                end
             end
         end
     end
 end)
 
-Tab:AddToggle({Name = "Buy Brainrot", Default = false, Callback = function(v) buyBrainrot = v end})
+Tab:AddToggle({
+    Name = "Buy Brainrot",
+    Default = false,
+    Callback = function(v)
+        instantInteract = v
+    end
+})
+
+Tab:AddSlider({
+    Name = "Interaction Distance",
+    Min = 5,
+    Max = 50,
+    Increase = 1,
+    Default = MAX_DISTANCE,
+    Callback = function(value)
+        MAX_DISTANCE = value
+    end
+})
 
 local antiAFKConnection
-Tab:AddToggle({Name = "Anti AFK", Default = false, Callback = function(v)
-    if v then
-        local vu = game:GetService("VirtualUser")
-        antiAFKConnection = game.Players.LocalPlayer.Idled:Connect(function()
-            vu:CaptureController()
-            vu:ClickButton2(Vector2.new())
-        end)
-    else
-        if antiAFKConnection then
-            antiAFKConnection:Disconnect()
-            antiAFKConnection = nil
+Tab:AddToggle({
+    Name = "Anti AFK",
+    Default = false,
+    Callback = function(v)
+        if v then
+            local vu = game:GetService("VirtualUser")
+            antiAFKConnection = game.Players.LocalPlayer.Idled:Connect(function()
+                vu:CaptureController()
+                vu:ClickButton2(Vector2.new())
+            end)
+        else
+            if antiAFKConnection then
+                antiAFKConnection:Disconnect()
+                antiAFKConnection = nil
+            end
         end
     end
-end})
+})
